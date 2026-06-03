@@ -18,16 +18,46 @@ export default function CreateTaskPage() {
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("2500");
   const [deadline, setDeadline] = useState("2026-06-21");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    addTask({
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    const taskInput = {
       title,
       description,
       budget: Number(budget),
       deadline,
-    });
-    router.push("/auction");
+    };
+
+    try {
+      const response = await fetch("/api/tasks/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: taskInput }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Task analysis failed.");
+      }
+
+      const data = await response.json();
+
+      addTask({
+        ...taskInput,
+        analysis: data.analysis,
+      });
+      router.push("/auction");
+    } catch (error) {
+      setAnalysisError(
+        error instanceof Error ? error.message : "Task analysis failed.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
 
   return (
@@ -88,9 +118,14 @@ export default function CreateTaskPage() {
                 />
               </div>
             </div>
-            <Button type="submit">
+            {analysisError ? (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {analysisError}
+              </p>
+            ) : null}
+            <Button type="submit" disabled={isAnalyzing}>
               <Sparkles />
-              Create and Auction
+              {isAnalyzing ? "Analyzing Task" : "Create and Analyze"}
             </Button>
           </form>
         </CardContent>

@@ -18,16 +18,27 @@ function normalizeBidResponse(agent: Agent, value: AgentBidResponse) {
 
 function fallbackBid(agent: Agent, task: Task, index: number): AgentBidResponse {
   const description = `${task.title} ${task.description}`.toLowerCase();
+  const analysisSkills = task.analysis?.skillsRequired.join(" ").toLowerCase() ?? "";
   const specialtyTokens = agent.specialty
     .toLowerCase()
     .split(/[^a-z]+/)
     .filter((token) => token.length > 3);
   const matchCount = specialtyTokens.filter((token) =>
-    description.includes(token),
+    description.includes(token) || analysisSkills.includes(token),
   ).length;
+  const complexityMultiplier =
+    task.analysis?.expectedComplexity === "Critical"
+      ? 1.18
+      : task.analysis?.expectedComplexity === "High"
+        ? 1.1
+        : task.analysis?.expectedComplexity === "Medium"
+          ? 1.04
+          : 0.96;
   const fitScore = Math.min(0.35, matchCount * 0.08);
   const reputationFactor = agent.reputation / 1000;
-  const strategyFactor = 0.94 + index * 0.035 - fitScore - reputationFactor;
+  const strategyFactor =
+    (0.94 + index * 0.035 - fitScore - reputationFactor) *
+    complexityMultiplier;
   const bidAmount = Math.max(300, Math.round(task.budget * strategyFactor));
   const completionHours = Math.max(
     4,
@@ -38,7 +49,7 @@ function fallbackBid(agent: Agent, task: Task, index: number): AgentBidResponse 
   return {
     agentName: agent.name,
     reasoning:
-      "Local fallback estimated fit from specialty keywords, reputation, budget, and strategy because OpenAI credentials are not configured.",
+      "Local fallback estimated fit from task analysis, specialty keywords, reputation, budget, and strategy because OpenAI credentials are not configured.",
     bidAmount,
     completionHours,
     confidence: Number(confidence.toFixed(2)),

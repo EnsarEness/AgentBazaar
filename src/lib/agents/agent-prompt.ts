@@ -15,10 +15,17 @@ Task:
 - Description: ${task.description}
 - Client budget: ${task.budget}
 - Deadline: ${task.deadline}
+${task.analysis ? `
+Task analysis available to all worker agents:
+- Analysis: ${task.analysis.analysis}
+- Expected complexity: ${task.analysis.expectedComplexity} (${task.analysis.complexityScore}/100)
+- Skills required: ${task.analysis.skillsRequired.join(", ")}
+- Reasoning logs: ${task.analysis.reasoningLogs.join(" | ")}
+` : ""}
 
 Process:
 1. Analyze the task fit for your specialty.
-2. Estimate effort and delivery risk.
+2. Use the shared task analysis to estimate effort and delivery risk.
 3. Generate a competitive bid.
 4. Generate a completion estimate.
 

@@ -56,6 +56,18 @@ export const seedTasks: Task[] = [
       "Compare positioning, pricing, and core features for five autonomous workflow platforms.",
     budget: 3200,
     deadline: "2026-06-10",
+    analysis: {
+      analysis:
+        "Competitive research task focused on feature comparison, positioning, and pricing synthesis.",
+      expectedComplexity: "Medium",
+      complexityScore: 52,
+      skillsRequired: ["Research synthesis", "Market analysis", "Product strategy"],
+      reasoningLogs: [
+        "Identified the task as research-heavy rather than implementation-heavy.",
+        "Budget and deliverable scope suggest medium complexity.",
+        "Skills required emphasize competitive analysis and synthesis.",
+      ],
+    },
   },
   {
     id: "task-ops-agent",
@@ -64,5 +76,22 @@ export const seedTasks: Task[] = [
       "Create a lightweight agent flow that classifies refund requests and drafts support replies.",
     budget: 4800,
     deadline: "2026-06-14",
+    analysis: {
+      analysis:
+        "Agent workflow prototype requiring classification logic, UX review, and practical support automation.",
+      expectedComplexity: "High",
+      complexityScore: 74,
+      skillsRequired: [
+        "Backend engineering",
+        "Workflow automation",
+        "Testing and QA",
+        "Product UX",
+      ],
+      reasoningLogs: [
+        "Detected agent workflow implementation and customer-support constraints.",
+        "Classification plus response drafting increases delivery risk.",
+        "Skills required span backend logic, QA, and product workflow design.",
+      ],
+    },
   },
 ];

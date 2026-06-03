@@ -56,6 +56,11 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="font-semibold text-zinc-950">{task.title}</h2>
+                        {task.analysis ? (
+                          <Badge className="bg-amber-50 text-amber-800 ring-amber-100">
+                            {task.analysis.expectedComplexity}
+                          </Badge>
+                        ) : null}
                         {awarded[task.id] ? (
                           <Badge className="bg-emerald-50 text-emerald-800 ring-emerald-100">
                             Awarded
@@ -67,6 +72,18 @@ export default function DashboardPage() {
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
                         {task.description}
                       </p>
+                      {task.analysis ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {task.analysis.skillsRequired.slice(0, 4).map((skill) => (
+                            <Badge
+                              key={skill}
+                              className="bg-white text-zinc-700 ring-zinc-200"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="text-sm sm:text-right">
                       <p className="font-semibold text-zinc-950">

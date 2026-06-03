@@ -4,6 +4,17 @@ export type Task = {
   description: string;
   budget: number;
   deadline: string;
+  analysis?: TaskAnalysis;
+};
+
+export type TaskComplexity = "Low" | "Medium" | "High" | "Critical";
+
+export type TaskAnalysis = {
+  analysis: string;
+  expectedComplexity: TaskComplexity;
+  complexityScore: number;
+  skillsRequired: string[];
+  reasoningLogs: string[];
 };
 
 export type Agent = {

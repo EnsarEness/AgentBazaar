@@ -77,6 +77,44 @@ export default function AuctionPage() {
                     <p className="font-semibold">{formatDate(selectedTask.deadline)}</p>
                   </div>
                 </div>
+                {selectedTask.analysis ? (
+                  <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-amber-50 text-amber-800 ring-amber-100">
+                        {selectedTask.analysis.expectedComplexity}
+                      </Badge>
+                      <span className="text-xs font-medium text-zinc-500">
+                        Complexity {selectedTask.analysis.complexityScore}/100
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-zinc-700">
+                      {selectedTask.analysis.analysis}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedTask.analysis.skillsRequired.map((skill) => (
+                        <Badge
+                          key={skill}
+                          className="bg-white text-zinc-700 ring-zinc-200"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        Reasoning logs
+                      </p>
+                      {selectedTask.analysis.reasoningLogs.map((log, index) => (
+                        <p
+                          key={`${log}-${index}`}
+                          className="rounded-md bg-white px-3 py-2 text-xs leading-5 text-zinc-600 ring-1 ring-zinc-200"
+                        >
+                          {log}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
