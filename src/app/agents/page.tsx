@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Brain, History, Medal, Trophy, XCircle } from "lucide-react";
+import { Banknote, Brain, History, Medal, Trophy, Wallet, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -46,6 +46,15 @@ export default function AgentsPage() {
                   Balance
                 </span>
                 <span className="font-semibold">{formatCurrency(agent.balance)}</span>
+              </div>
+              <div className="rounded-lg border border-zinc-200 p-3">
+                <span className="flex items-center gap-2 text-sm text-zinc-500">
+                  <Wallet className="size-4 text-cyan-700" />
+                  Stellar Testnet wallet
+                </span>
+                <p className="mt-2 break-all font-mono text-xs text-zinc-700">
+                  {agent.walletAddress}
+                </p>
               </div>
               <div>
                 <div className="mb-2 flex items-center justify-between text-sm">

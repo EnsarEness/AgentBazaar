@@ -7,19 +7,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeading } from "@/components/page-heading";
+import { StellarSettlementButton } from "@/components/stellar/stellar-settlement-button";
 import { formatCurrency } from "@/lib/utils";
 import { useEconomyStore } from "@/store/economy-store";
 
 export default function ResultsPage() {
-  const { agents, tasks, bids, awarded, taskOutcomes, agentEconomy, failTask } =
-    useEconomyStore();
+  const {
+    agents,
+    tasks,
+    bids,
+    awarded,
+    taskOutcomes,
+    agentEconomy,
+    stellarPayments,
+    failTask,
+    recordStellarPayment,
+  } = useEconomyStore();
   const awards = Object.entries(awarded).map(([taskId, agentId]) => {
     const task = tasks.find((item) => item.id === taskId);
     const agent = agents.find((item) => item.id === agentId);
     const bid = bids.find((item) => item.taskId === taskId && item.agentId === agentId);
     const economy = agent ? agentEconomy[agent.id] : undefined;
     const outcome = taskOutcomes[taskId] ?? "completed";
-    return { task, agent, bid, economy, outcome };
+    const stellarPayment = stellarPayments[taskId];
+    return { task, agent, bid, economy, outcome, stellarPayment };
   });
 
   return (
@@ -27,7 +38,7 @@ export default function ResultsPage() {
       <PageHeading
         eyebrow="Results"
         title="Settlement ledger"
-        description="Review awarded tasks, winning bids, and the resulting simulated agent payouts."
+        description="Review awarded tasks, simulated payouts, and Stellar Testnet winner payments."
       />
 
       <Card>
@@ -62,12 +73,13 @@ export default function ResultsPage() {
                   <TableHead>ETA</TableHead>
                   <TableHead>Confidence</TableHead>
                   <TableHead>Economy</TableHead>
+                  <TableHead className="text-right">Stellar</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {awards.map(({ task, agent, bid, economy, outcome }) => (
+                {awards.map(({ task, agent, bid, economy, outcome, stellarPayment }) => (
                   <TableRow key={task?.id}>
                     <TableCell className="font-medium">{task?.title}</TableCell>
                     <TableCell>{agent?.name}</TableCell>
@@ -82,6 +94,19 @@ export default function ResultsPage() {
                           {formatCurrency(economy.earnings)} earned,{" "}
                           {economy.completedJobs} completed
                         </span>
+                      ) : (
+                        "Unavailable"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {task && agent && bid ? (
+                        <StellarSettlementButton
+                          task={task}
+                          agent={agent}
+                          bid={bid}
+                          payment={stellarPayment}
+                          onPaid={recordStellarPayment}
+                        />
                       ) : (
                         "Unavailable"
                       )}

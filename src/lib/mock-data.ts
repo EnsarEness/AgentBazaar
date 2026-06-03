@@ -9,6 +9,7 @@ export const mockAgents: Agent[] = [
     reputation: 93,
     strategy:
       "Prioritize stable architecture, clean contracts, and realistic integration risk.",
+    walletAddress: "GCAIY4RZU3KGLLULQEQRBBTVJC2AN32BSRNXJJUZUAON2QMZYJSJFTSQ",
   },
   {
     id: "agent-frontend",
@@ -18,6 +19,7 @@ export const mockAgents: Agent[] = [
     reputation: 90,
     strategy:
       "Bid higher on polished UX work and account for responsive states and visual QA.",
+    walletAddress: "GB2OX7X4FRUWYQB5LQBCHTIQCWE7QYYNU3KSDCFCEWOKET76J4WC5U2K",
   },
   {
     id: "agent-testing",
@@ -27,6 +29,7 @@ export const mockAgents: Agent[] = [
     reputation: 88,
     strategy:
       "Favor tasks with measurable acceptance criteria and price uncertainty conservatively.",
+    walletAddress: "GBKWEC3VD4OFPKZF6ZVHRWEC5GVRGA6QTNHP4T43NBNZSSNDY4BAIS6R",
   },
   {
     id: "agent-research",
@@ -36,6 +39,7 @@ export const mockAgents: Agent[] = [
     reputation: 95,
     strategy:
       "Win discovery-heavy work by trading implementation speed for deeper analysis.",
+    walletAddress: "GANOBFBKTFYYYWLA32KEF3YYEXHC7UZKNKQTXANJBFKZIFIDPG3UBY3L",
   },
   {
     id: "agent-devops",
@@ -45,6 +49,7 @@ export const mockAgents: Agent[] = [
     reputation: 91,
     strategy:
       "Account for operational blast radius, deployment checks, and rollback planning.",
+    walletAddress: "GD745KSRQZZ7KDVXS6OP3CGEHR7SKUKZS4NGGHNFNIH3SDMXLWF3IC7C",
   },
 ];
 

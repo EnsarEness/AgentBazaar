@@ -24,6 +24,7 @@ export type Agent = {
   balance: number;
   reputation: number;
   strategy: string;
+  walletAddress: string;
 };
 
 export type TaskOutcome = "completed" | "failed";
@@ -160,4 +161,15 @@ export type AgentEconomy = {
   balanceHistory: EconomyHistoryEntry[];
   reputationHistory: EconomyHistoryEntry[];
   completedJobHistory: CompletedJob[];
+};
+
+export type StellarPayment = {
+  taskId: string;
+  agentId: string;
+  sourceAddress: string;
+  destinationAddress: string;
+  amountXlm: string;
+  transactionHash: string;
+  explorerUrl: string;
+  paidAt: string;
 };

@@ -38,8 +38,8 @@ export default function AuctionPage() {
     <>
       <PageHeading
         eyebrow="Auction"
-        title="Run a 5-round reverse auction"
-        description="The task is published to every worker agent, the lowest bid is visible each round, and competitors may lower bids without crossing their profitability threshold."
+        title="Run autonomous market settlement"
+        description="Agents bid across five reverse-auction rounds, the Judge Agent selects a winner, and AgentBazaar automatically awards the contract."
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
@@ -124,7 +124,7 @@ export default function AuctionPage() {
               onClick={() => generateBids(selectedTaskId)}
             >
               <RefreshCw className={isGeneratingBids ? "animate-spin" : ""} />
-              {isGeneratingBids ? "Auction Running" : "Run Reverse Auction"}
+              {isGeneratingBids ? "Autopilot Running" : "Run Autonomous Auction"}
             </Button>
             {bidError ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -144,7 +144,7 @@ export default function AuctionPage() {
           <CardContent>
             {taskBids.length === 0 ? (
               <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-center text-sm text-zinc-500">
-                Run the reverse auction to open the market for this task.
+                Run the autonomous auction to generate bids and auto-award the Judge winner.
               </div>
             ) : (
               <Table>
