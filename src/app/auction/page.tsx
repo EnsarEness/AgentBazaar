@@ -10,7 +10,16 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useEconomyStore } from "@/store/economy-store";
 
 export default function AuctionPage() {
-  const { agents, tasks, bids, awarded, generateBids, awardBid } = useEconomyStore();
+  const {
+    agents,
+    tasks,
+    bids,
+    awarded,
+    isGeneratingBids,
+    bidError,
+    generateBids,
+    awardBid,
+  } = useEconomyStore();
   const [selectedTaskId, setSelectedTaskId] = useState(tasks[0]?.id ?? "");
   const selectedTask = useMemo(
     () => tasks.find((task) => task.id === selectedTaskId),
@@ -24,8 +33,8 @@ export default function AuctionPage() {
     <>
       <PageHeading
         eyebrow="Auction"
-        title="Run the agent market"
-        description="Select a task, generate simulated bids, and award the contract to the best-fit agent."
+        title="Run autonomous worker bidding"
+        description="Each worker agent analyzes the task, estimates effort, generates a bid, and returns a structured completion forecast."
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
@@ -68,19 +77,26 @@ export default function AuctionPage() {
 
             <Button
               className="w-full"
-              disabled={!selectedTask}
+              disabled={!selectedTask || isGeneratingBids}
               onClick={() => generateBids(selectedTaskId)}
             >
-              <RefreshCw />
-              Generate Bids
+              <RefreshCw className={isGeneratingBids ? "animate-spin" : ""} />
+              {isGeneratingBids ? "Agents Thinking" : "Generate AI Bids"}
             </Button>
+            {bidError ? (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {bidError}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Bid board</CardTitle>
-            <CardDescription>Lowest qualified bid appears first.</CardDescription>
+            <CardDescription>
+              Lowest bid appears first; confidence and reasoning explain agent fit.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {taskBids.length === 0 ? (
@@ -95,6 +111,7 @@ export default function AuctionPage() {
                     <TableHead>Specialty</TableHead>
                     <TableHead>Bid</TableHead>
                     <TableHead>ETA</TableHead>
+                    <TableHead>Confidence</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -104,10 +121,18 @@ export default function AuctionPage() {
                     const isAwarded = awarded[bid.taskId] === bid.agentId;
                     return (
                       <TableRow key={`${bid.taskId}-${bid.agentId}`}>
-                        <TableCell className="font-medium">{agent?.name}</TableCell>
-                        <TableCell className="text-zinc-600">{agent?.specialty}</TableCell>
+                        <TableCell className="min-w-40 font-medium">
+                          <div>{agent?.name}</div>
+                          <p className="mt-1 text-xs font-normal leading-5 text-zinc-500">
+                            {bid.reasoning}
+                          </p>
+                        </TableCell>
+                        <TableCell className="min-w-48 text-zinc-600">
+                          {agent?.specialty}
+                        </TableCell>
                         <TableCell>{formatCurrency(bid.amount)}</TableCell>
                         <TableCell>{bid.estimatedCompletionTime}</TableCell>
+                        <TableCell>{Math.round(bid.confidence * 100)}%</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"

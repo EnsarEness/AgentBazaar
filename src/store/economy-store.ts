@@ -9,39 +9,21 @@ type EconomyState = {
   tasks: Task[];
   bids: Bid[];
   awarded: Record<string, string>;
+  isGeneratingBids: boolean;
+  bidError: string | null;
   addTask: (task: Omit<Task, "id">) => Task;
-  generateBids: (taskId: string) => void;
+  generateBids: (taskId: string) => Promise<void>;
   awardBid: (taskId: string, agentId: string) => void;
   getBidsForTask: (taskId: string) => Bid[];
 };
-
-const hourOptions = [8, 12, 18, 24, 36];
-
-function quoteForAgent(agent: Agent, task: Task, index: number): Bid {
-  const fit =
-    agent.specialty.toLowerCase().includes("automation") &&
-    task.description.toLowerCase().includes("agent")
-      ? 0.82
-      : 0.9 + index * 0.04;
-  const reputationDiscount = (100 - agent.reputation) / 250;
-  const amount = Math.max(
-    250,
-    Math.round(task.budget * (fit + reputationDiscount) - index * 75),
-  );
-
-  return {
-    taskId: task.id,
-    agentId: agent.id,
-    amount,
-    estimatedCompletionTime: `${hourOptions[index] ?? 48}h`,
-  };
-}
 
 export const useEconomyStore = create<EconomyState>((set, get) => ({
   agents: mockAgents,
   tasks: seedTasks,
   bids: [],
   awarded: {},
+  isGeneratingBids: false,
+  bidError: null,
 
   addTask: (taskInput) => {
     const task: Task = {
@@ -52,19 +34,43 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
     return task;
   },
 
-  generateBids: (taskId) => {
+  generateBids: async (taskId) => {
     const task = get().tasks.find((item) => item.id === taskId);
     if (!task) {
       return;
     }
 
-    const bids = get().agents.map((agent, index) =>
-      quoteForAgent(agent, task, index),
-    );
+    set({ isGeneratingBids: true, bidError: null });
 
-    set((state) => ({
-      bids: [...state.bids.filter((bid) => bid.taskId !== taskId), ...bids],
-    }));
+    try {
+      const response = await fetch("/api/agents/bids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Agent bid generation failed.");
+      }
+
+      const data = (await response.json()) as { bids: Bid[] };
+
+      set((state) => ({
+        bids: [
+          ...state.bids.filter((bid) => bid.taskId !== taskId),
+          ...data.bids,
+        ],
+        isGeneratingBids: false,
+      }));
+    } catch (error) {
+      set({
+        isGeneratingBids: false,
+        bidError:
+          error instanceof Error
+            ? error.message
+            : "Agent bid generation failed.",
+      });
+    }
   },
 
   awardBid: (taskId, agentId) => {

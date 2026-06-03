@@ -57,6 +57,7 @@ export default function ResultsPage() {
                   <TableHead>Winner</TableHead>
                   <TableHead>Bid</TableHead>
                   <TableHead>ETA</TableHead>
+                  <TableHead>Confidence</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -67,6 +68,9 @@ export default function ResultsPage() {
                     <TableCell>{agent?.name}</TableCell>
                     <TableCell>{bid ? formatCurrency(bid.amount) : "Unavailable"}</TableCell>
                     <TableCell>{bid?.estimatedCompletionTime ?? "Unavailable"}</TableCell>
+                    <TableCell>
+                      {bid ? `${Math.round(bid.confidence * 100)}%` : "Unavailable"}
+                    </TableCell>
                     <TableCell>
                       <Badge className="bg-emerald-50 text-emerald-800 ring-emerald-100">
                         Settled

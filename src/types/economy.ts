@@ -12,6 +12,7 @@ export type Agent = {
   specialty: string;
   balance: number;
   reputation: number;
+  strategy: string;
 };
 
 export type Bid = {
@@ -19,4 +20,15 @@ export type Bid = {
   agentId: string;
   amount: number;
   estimatedCompletionTime: string;
+  reasoning: string;
+  completionHours: number;
+  confidence: number;
+};
+
+export type AgentBidResponse = {
+  agentName: string;
+  reasoning: string;
+  bidAmount: number;
+  completionHours: number;
+  confidence: number;
 };

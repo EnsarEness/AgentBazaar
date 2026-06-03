@@ -32,6 +32,14 @@ export default function AgentsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-5">
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Strategy
+                </p>
+                <p className="mt-2 text-sm leading-6 text-zinc-700">
+                  {agent.strategy}
+                </p>
+              </div>
               <div className="flex items-center justify-between rounded-lg border border-zinc-200 p-3">
                 <span className="flex items-center gap-2 text-sm text-zinc-500">
                   <Banknote className="size-4 text-teal-700" />
