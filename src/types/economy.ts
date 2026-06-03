@@ -15,6 +15,8 @@ export type Agent = {
   strategy: string;
 };
 
+export type TaskOutcome = "completed" | "failed";
+
 export type Bid = {
   taskId: string;
   agentId: string;
@@ -102,4 +104,30 @@ export type AuctionHistory = {
   winningAgentId: string;
   winningBid: number;
   judgeReport: JudgeReport;
+};
+
+export type EconomyHistoryEntry = {
+  taskId: string;
+  taskTitle: string;
+  timestamp: string;
+  value: number;
+  delta: number;
+  reason: string;
+};
+
+export type CompletedJob = {
+  taskId: string;
+  taskTitle: string;
+  amount: number;
+  completedAt: string;
+};
+
+export type AgentEconomy = {
+  agentId: string;
+  earnings: number;
+  completedJobs: number;
+  failedJobs: number;
+  balanceHistory: EconomyHistoryEntry[];
+  reputationHistory: EconomyHistoryEntry[];
+  completedJobHistory: CompletedJob[];
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowRight, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,15 @@ import { formatCurrency } from "@/lib/utils";
 import { useEconomyStore } from "@/store/economy-store";
 
 export default function ResultsPage() {
-  const { agents, tasks, bids, awarded } = useEconomyStore();
+  const { agents, tasks, bids, awarded, taskOutcomes, agentEconomy, failTask } =
+    useEconomyStore();
   const awards = Object.entries(awarded).map(([taskId, agentId]) => {
     const task = tasks.find((item) => item.id === taskId);
     const agent = agents.find((item) => item.id === agentId);
     const bid = bids.find((item) => item.taskId === taskId && item.agentId === agentId);
-    return { task, agent, bid };
+    const economy = agent ? agentEconomy[agent.id] : undefined;
+    const outcome = taskOutcomes[taskId] ?? "completed";
+    return { task, agent, bid, economy, outcome };
   });
 
   return (
@@ -58,11 +61,13 @@ export default function ResultsPage() {
                   <TableHead>Bid</TableHead>
                   <TableHead>ETA</TableHead>
                   <TableHead>Confidence</TableHead>
+                  <TableHead>Economy</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {awards.map(({ task, agent, bid }) => (
+                {awards.map(({ task, agent, bid, economy, outcome }) => (
                   <TableRow key={task?.id}>
                     <TableCell className="font-medium">{task?.title}</TableCell>
                     <TableCell>{agent?.name}</TableCell>
@@ -72,9 +77,36 @@ export default function ResultsPage() {
                       {bid ? `${Math.round(bid.confidence * 100)}%` : "Unavailable"}
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-emerald-50 text-emerald-800 ring-emerald-100">
-                        Settled
+                      {economy ? (
+                        <span className="text-sm text-zinc-600">
+                          {formatCurrency(economy.earnings)} earned,{" "}
+                          {economy.completedJobs} completed
+                        </span>
+                      ) : (
+                        "Unavailable"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          outcome === "failed"
+                            ? "bg-red-50 text-red-800 ring-red-100"
+                            : "bg-emerald-50 text-emerald-800 ring-emerald-100"
+                        }
+                      >
+                        {outcome === "failed" ? "Failed" : "Completed"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!task || outcome === "failed"}
+                        onClick={() => task && failTask(task.id)}
+                      >
+                        <AlertTriangle />
+                        Mark Failed
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

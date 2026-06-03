@@ -17,6 +17,7 @@ export default function AuctionPage() {
     bids,
     auctionHistories,
     awarded,
+    taskOutcomes,
     isGeneratingBids,
     bidError,
     generateBids,
@@ -124,6 +125,7 @@ export default function AuctionPage() {
                     const agent = agents.find((item) => item.id === bid.agentId);
                     const isAwarded = awarded[bid.taskId] === bid.agentId;
                     const isJudgePick = judgeReport?.selectedAgentId === bid.agentId;
+                    const taskOutcome = taskOutcomes[bid.taskId];
                     return (
                       <TableRow
                         key={`${bid.taskId}-${bid.agentId}`}
@@ -152,10 +154,17 @@ export default function AuctionPage() {
                           <Button
                             size="sm"
                             variant={isAwarded ? "secondary" : "default"}
+                            disabled={Boolean(taskOutcome)}
                             onClick={() => awardBid(bid.taskId, bid.agentId)}
                           >
                             {isAwarded ? <CheckCircle2 /> : <Gavel />}
-                            {isAwarded ? "Awarded" : "Award"}
+                            {isAwarded
+                              ? taskOutcome === "failed"
+                                ? "Failed"
+                                : "Awarded"
+                              : taskOutcome
+                                ? "Closed"
+                                : "Award"}
                           </Button>
                         </TableCell>
                       </TableRow>

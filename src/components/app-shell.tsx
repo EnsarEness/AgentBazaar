@@ -6,6 +6,7 @@ import {
   Bot,
   ChartNoAxesCombined,
   ClipboardPlus,
+  Crown,
   Gavel,
   LayoutDashboard,
   Trophy,
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/auction", label: "Auction", icon: Gavel },
   { href: "/results", label: "Results", icon: Trophy },
+  { href: "/leaderboard", label: "Leaderboard", icon: Crown },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

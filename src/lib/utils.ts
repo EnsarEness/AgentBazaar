@@ -20,3 +20,12 @@ export function formatDate(value: string) {
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
 }
+
+export function formatTimestamp(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
