@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateBidsForTask } from "@/lib/agents/bid-service";
-import type { Task } from "@/types/economy";
+import type { AgentMemory, Task } from "@/types/economy";
 
 function isTask(value: Partial<Task>): value is Task {
   return Boolean(
@@ -15,6 +15,9 @@ function isTask(value: Partial<Task>): value is Task {
 export async function POST(request: Request) {
   const body = await request.json();
   const task = body.task as Partial<Task>;
+  const agentMemories = body.agentMemories as
+    | Record<string, AgentMemory>
+    | undefined;
 
   if (!isTask(task)) {
     return NextResponse.json(
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const bids = await generateBidsForTask(task);
+  const bids = await generateBidsForTask(task, agentMemories);
 
   return NextResponse.json({ bids });
 }

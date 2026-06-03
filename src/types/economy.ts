@@ -27,6 +27,7 @@ export type Agent = {
 };
 
 export type TaskOutcome = "completed" | "failed";
+export type AgentMemoryOutcome = "seen" | "won" | "lost" | "failed";
 
 export type Bid = {
   taskId: string;
@@ -44,6 +45,24 @@ export type AgentBidResponse = {
   bidAmount: number;
   completionHours: number;
   confidence: number;
+};
+
+export type AgentMemoryTask = {
+  taskId: string;
+  taskTitle: string;
+  categories: string[];
+  outcome: AgentMemoryOutcome;
+  amount?: number;
+  rememberedAt: string;
+};
+
+export type AgentMemory = {
+  agentId: string;
+  previousTasks: AgentMemoryTask[];
+  previousWins: AgentMemoryTask[];
+  previousLosses: AgentMemoryTask[];
+  preferredTaskCategories: Record<string, number>;
+  memoryNotes: string[];
 };
 
 export type AuctionRoundBid = {

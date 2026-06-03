@@ -3,6 +3,7 @@ import { runJudgeAgent } from "@/lib/agents/judge-agent-service";
 import { workerAgents } from "@/lib/agents/worker-agents";
 import type {
   Agent,
+  AgentMemory,
   AuctionHistory,
   AuctionRound,
   AuctionRoundBid,
@@ -130,8 +131,11 @@ function toFinalBid(roundBid: AuctionRoundBid): Bid {
   };
 }
 
-export async function runReverseAuction(task: Task): Promise<AuctionHistory> {
-  const initialBids = await generateBidsForTask(task);
+export async function runReverseAuction(
+  task: Task,
+  agentMemories?: Record<string, AgentMemory>,
+): Promise<AuctionHistory> {
+  const initialBids = await generateBidsForTask(task, agentMemories);
   const rounds: AuctionRound[] = [createRoundOne(task, initialBids)];
 
   for (let round = 2; round <= auctionRoundCount; round += 1) {

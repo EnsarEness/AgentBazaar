@@ -5,6 +5,9 @@ import { mockAgents, seedTasks } from "@/lib/mock-data";
 import type {
   Agent,
   AgentEconomy,
+  AgentMemory,
+  AgentMemoryTask,
+  AgentMemoryOutcome,
   AuctionHistory,
   Bid,
   EconomyHistoryEntry,
@@ -20,6 +23,7 @@ type EconomyState = {
   awarded: Record<string, string>;
   taskOutcomes: Record<string, TaskOutcome>;
   agentEconomy: Record<string, AgentEconomy>;
+  agentMemories: Record<string, AgentMemory>;
   isGeneratingBids: boolean;
   bidError: string | null;
   addTask: (task: Omit<Task, "id">) => Task;
@@ -64,11 +68,146 @@ function createInitialAgentEconomy(agents: Agent[]) {
   }, {});
 }
 
+function createInitialAgentMemories(agents: Agent[]) {
+  return agents.reduce<Record<string, AgentMemory>>((memories, agent) => {
+    memories[agent.id] = {
+      agentId: agent.id,
+      previousTasks: [],
+      previousWins: [],
+      previousLosses: [],
+      preferredTaskCategories: {},
+      memoryNotes: ["No prior marketplace memory yet."],
+    };
+    return memories;
+  }, {});
+}
+
 function appendHistory(
   history: EconomyHistoryEntry[],
   entry: EconomyHistoryEntry,
 ) {
   return [...history, entry];
+}
+
+function getTaskCategories(task: Task) {
+  const categories = task.analysis?.skillsRequired?.length
+    ? task.analysis.skillsRequired
+    : [task.title.split(" ").slice(0, 2).join(" ") || "General task"];
+
+  return categories.slice(0, 6);
+}
+
+function createMemoryTask(
+  task: Task,
+  outcome: AgentMemoryOutcome,
+  amount?: number,
+): AgentMemoryTask {
+  return {
+    taskId: task.id,
+    taskTitle: task.title,
+    categories: getTaskCategories(task),
+    outcome,
+    amount,
+    rememberedAt: new Date().toISOString(),
+  };
+}
+
+function upsertMemoryTask(
+  tasks: AgentMemoryTask[],
+  entry: AgentMemoryTask,
+) {
+  return [entry, ...tasks.filter((task) => task.taskId !== entry.taskId)].slice(
+    0,
+    12,
+  );
+}
+
+function updatePreferredCategories(
+  categories: Record<string, number>,
+  taskCategories: string[],
+  delta: number,
+) {
+  return taskCategories.reduce<Record<string, number>>(
+    (nextCategories, category) => {
+      const nextValue = Math.max(0, (nextCategories[category] ?? 0) + delta);
+      if (nextValue === 0) {
+        delete nextCategories[category];
+      } else {
+        nextCategories[category] = nextValue;
+      }
+      return nextCategories;
+    },
+    { ...categories },
+  );
+}
+
+function rememberSeenTask(memory: AgentMemory, task: Task) {
+  const entry = createMemoryTask(task, "seen");
+
+  return {
+    ...memory,
+    previousTasks: upsertMemoryTask(memory.previousTasks, entry),
+    memoryNotes: [
+      `Received ${task.title} for bidding context.`,
+      ...memory.memoryNotes,
+    ].slice(0, 6),
+  };
+}
+
+function rememberWin(memory: AgentMemory, task: Task, amount: number) {
+  const entry = createMemoryTask(task, "won", amount);
+
+  return {
+    ...memory,
+    previousTasks: upsertMemoryTask(memory.previousTasks, entry),
+    previousWins: upsertMemoryTask(memory.previousWins, entry),
+    previousLosses: memory.previousLosses.filter(
+      (loss) => loss.taskId !== task.id,
+    ),
+    preferredTaskCategories: updatePreferredCategories(
+      memory.preferredTaskCategories,
+      entry.categories,
+      1,
+    ),
+    memoryNotes: [
+      `Won ${task.title}; increased confidence for ${entry.categories.join(", ")} tasks.`,
+      ...memory.memoryNotes,
+    ].slice(0, 6),
+  };
+}
+
+function rememberLoss(memory: AgentMemory, task: Task) {
+  const entry = createMemoryTask(task, "lost");
+
+  return {
+    ...memory,
+    previousTasks: upsertMemoryTask(memory.previousTasks, entry),
+    previousLosses: upsertMemoryTask(memory.previousLosses, entry),
+    memoryNotes: [
+      `Lost ${task.title}; future bids will be more selective for similar work.`,
+      ...memory.memoryNotes,
+    ].slice(0, 6),
+  };
+}
+
+function rememberFailure(memory: AgentMemory, task: Task) {
+  const entry = createMemoryTask(task, "failed");
+
+  return {
+    ...memory,
+    previousTasks: upsertMemoryTask(memory.previousTasks, entry),
+    previousWins: memory.previousWins.filter((win) => win.taskId !== task.id),
+    previousLosses: upsertMemoryTask(memory.previousLosses, entry),
+    preferredTaskCategories: updatePreferredCategories(
+      memory.preferredTaskCategories,
+      entry.categories,
+      -1,
+    ),
+    memoryNotes: [
+      `Failed ${task.title}; reduced preference for ${entry.categories.join(", ")} tasks.`,
+      ...memory.memoryNotes,
+    ].slice(0, 6),
+  };
 }
 
 export const useEconomyStore = create<EconomyState>((set, get) => ({
@@ -79,6 +218,7 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
   awarded: {},
   taskOutcomes: {},
   agentEconomy: createInitialAgentEconomy(mockAgents),
+  agentMemories: createInitialAgentMemories(mockAgents),
   isGeneratingBids: false,
   bidError: null,
 
@@ -103,7 +243,7 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
       const response = await fetch("/api/agents/reverse-auction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({ task, agentMemories: get().agentMemories }),
       });
 
       if (!response.ok) {
@@ -121,6 +261,12 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
           ...state.auctionHistories,
           [taskId]: data.auction,
         },
+        agentMemories: Object.fromEntries(
+          state.agents.map((agent) => [
+            agent.id,
+            rememberSeenTask(state.agentMemories[agent.id], task),
+          ]),
+        ),
         isGeneratingBids: false,
       }));
     } catch (error) {
@@ -157,6 +303,9 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
       const timestamp = new Date().toISOString();
       const nextBalance = agent.balance + bid.amount;
       const nextReputation = Math.min(100, agent.reputation + 1);
+      const losingAgentIds = state.bids
+        .filter((item) => item.taskId === taskId && item.agentId !== agentId)
+        .map((item) => item.agentId);
 
       return {
         awarded: { ...state.awarded, [taskId]: agentId },
@@ -202,6 +351,16 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
               },
             ],
           },
+        },
+        agentMemories: {
+          ...state.agentMemories,
+          [agentId]: rememberWin(state.agentMemories[agentId], task, bid.amount),
+          ...Object.fromEntries(
+            losingAgentIds.map((losingAgentId) => [
+              losingAgentId,
+              rememberLoss(state.agentMemories[losingAgentId], task),
+            ]),
+          ),
         },
       };
     });
@@ -260,6 +419,10 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
               (job) => job.taskId !== taskId,
             ),
           },
+        },
+        agentMemories: {
+          ...state.agentMemories,
+          [agentId]: rememberFailure(state.agentMemories[agentId], task),
         },
       };
     });
