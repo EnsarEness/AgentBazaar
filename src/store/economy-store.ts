@@ -11,6 +11,7 @@ import type {
   AuctionHistory,
   Bid,
   EconomyHistoryEntry,
+  StellarEscrow,
   StellarPayment,
   Task,
   TaskOutcome,
@@ -26,6 +27,7 @@ type EconomyState = {
   agentEconomy: Record<string, AgentEconomy>;
   agentMemories: Record<string, AgentMemory>;
   stellarPayments: Record<string, StellarPayment>;
+  stellarEscrows: Record<string, StellarEscrow>;
   isGeneratingBids: boolean;
   bidError: string | null;
   addTask: (task: Omit<Task, "id">) => Task;
@@ -33,6 +35,7 @@ type EconomyState = {
   awardBid: (taskId: string, agentId: string) => void;
   failTask: (taskId: string) => void;
   recordStellarPayment: (payment: StellarPayment) => void;
+  recordStellarEscrow: (escrow: StellarEscrow) => void;
   getBidsForTask: (taskId: string) => Bid[];
 };
 
@@ -223,6 +226,7 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
   agentEconomy: createInitialAgentEconomy(mockAgents),
   agentMemories: createInitialAgentMemories(mockAgents),
   stellarPayments: {},
+  stellarEscrows: {},
   isGeneratingBids: false,
   bidError: null,
 
@@ -439,6 +443,15 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
       stellarPayments: {
         ...state.stellarPayments,
         [payment.taskId]: payment,
+      },
+    }));
+  },
+
+  recordStellarEscrow: (escrow) => {
+    set((state) => ({
+      stellarEscrows: {
+        ...state.stellarEscrows,
+        [escrow.taskId]: escrow,
       },
     }));
   },

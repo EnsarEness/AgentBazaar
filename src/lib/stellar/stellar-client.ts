@@ -1,20 +1,9 @@
 "use client";
 
-import {
-  Asset,
-  BASE_FEE,
-  Horizon,
-  Memo,
-  Networks,
-  Operation,
-  TransactionBuilder,
-} from "@stellar/stellar-sdk";
+import { Networks } from "@stellar/stellar-sdk";
 import freighterApi from "@stellar/freighter-api";
 
-const horizonUrl = "https://horizon-testnet.stellar.org";
 const friendbotUrl = "https://friendbot.stellar.org";
-
-const server = new Horizon.Server(horizonUrl);
 
 type FreighterError = {
   message?: string;
@@ -26,27 +15,12 @@ export type StellarWalletState = {
   networkPassphrase: string;
 };
 
-export type StellarSettlementInput = {
-  sourceAddress: string;
-  destinationAddress: string;
-  amountXlm: string;
-};
-
 function getFreighterErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
     return String((error as FreighterError).message);
   }
 
   return "Freighter returned an error.";
-}
-
-async function accountExists(address: string) {
-  try {
-    await server.loadAccount(address);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export function convertMarketBidToXlm(bidAmount: number) {
@@ -96,56 +70,4 @@ export async function fundTestnetWallet(address: string) {
   }
 
   return response.json();
-}
-
-export async function submitWinnerPayment({
-  sourceAddress,
-  destinationAddress,
-  amountXlm,
-}: StellarSettlementInput) {
-  const sourceAccount = await server.loadAccount(sourceAddress);
-  const destinationExists = await accountExists(destinationAddress);
-  const operation = destinationExists
-    ? Operation.payment({
-        destination: destinationAddress,
-        asset: Asset.native(),
-        amount: amountXlm,
-      })
-    : Operation.createAccount({
-        destination: destinationAddress,
-        startingBalance: amountXlm,
-      });
-
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: BASE_FEE,
-    networkPassphrase: Networks.TESTNET,
-  })
-    .addOperation(operation)
-    .addMemo(Memo.text("AgentBazaar"))
-    .setTimeout(30)
-    .build();
-
-  const signed = await freighterApi.signTransaction(transaction.toXDR(), {
-    address: sourceAddress,
-    networkPassphrase: Networks.TESTNET,
-  });
-
-  if (signed.error || !signed.signedTxXdr) {
-    throw new Error(
-      signed.error
-        ? getFreighterErrorMessage(signed.error)
-        : "Freighter did not return a signed transaction.",
-    );
-  }
-
-  const signedTransaction = TransactionBuilder.fromXDR(
-    signed.signedTxXdr,
-    Networks.TESTNET,
-  );
-  const result = await server.submitTransaction(signedTransaction);
-
-  return {
-    transactionHash: result.hash,
-    explorerUrl: getStellarExplorerUrl(result.hash),
-  };
 }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeading } from "@/components/page-heading";
-import { StellarSettlementButton } from "@/components/stellar/stellar-settlement-button";
+import { StellarEscrowPanel } from "@/components/stellar/stellar-escrow-panel";
 import { formatCurrency } from "@/lib/utils";
 import { useEconomyStore } from "@/store/economy-store";
 
@@ -20,8 +20,10 @@ export default function ResultsPage() {
     taskOutcomes,
     agentEconomy,
     stellarPayments,
+    stellarEscrows,
     failTask,
     recordStellarPayment,
+    recordStellarEscrow,
   } = useEconomyStore();
   const awards = Object.entries(awarded).map(([taskId, agentId]) => {
     const task = tasks.find((item) => item.id === taskId);
@@ -30,15 +32,16 @@ export default function ResultsPage() {
     const economy = agent ? agentEconomy[agent.id] : undefined;
     const outcome = taskOutcomes[taskId] ?? "completed";
     const stellarPayment = stellarPayments[taskId];
-    return { task, agent, bid, economy, outcome, stellarPayment };
+    const stellarEscrow = stellarEscrows[taskId];
+    return { task, agent, bid, economy, outcome, stellarPayment, stellarEscrow };
   });
 
   return (
     <>
       <PageHeading
         eyebrow="Results"
-        title="Settlement ledger"
-        description="Review awarded tasks, simulated payouts, and Stellar Testnet winner payments."
+        title="Soroban escrow ledger"
+        description="Review awarded tasks, simulated payouts, Soroban contract deposits, and Stellar Testnet releases."
       />
 
       <Card>
@@ -73,13 +76,21 @@ export default function ResultsPage() {
                   <TableHead>ETA</TableHead>
                   <TableHead>Confidence</TableHead>
                   <TableHead>Economy</TableHead>
-                  <TableHead className="text-right">Stellar</TableHead>
+                  <TableHead className="text-right">Soroban Escrow</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {awards.map(({ task, agent, bid, economy, outcome, stellarPayment }) => (
+                {awards.map(({
+                  task,
+                  agent,
+                  bid,
+                  economy,
+                  outcome,
+                  stellarPayment,
+                  stellarEscrow,
+                }) => (
                   <TableRow key={task?.id}>
                     <TableCell className="font-medium">{task?.title}</TableCell>
                     <TableCell>{agent?.name}</TableCell>
@@ -100,11 +111,13 @@ export default function ResultsPage() {
                     </TableCell>
                     <TableCell>
                       {task && agent && bid ? (
-                        <StellarSettlementButton
+                        <StellarEscrowPanel
                           task={task}
                           agent={agent}
                           bid={bid}
+                          escrow={stellarEscrow}
                           payment={stellarPayment}
+                          onEscrowChange={recordStellarEscrow}
                           onPaid={recordStellarPayment}
                         />
                       ) : (

@@ -173,3 +173,24 @@ export type StellarPayment = {
   explorerUrl: string;
   paidAt: string;
 };
+
+export type StellarEscrowStatus = "funded" | "released";
+
+export type StellarEscrow = {
+  taskId: string;
+  agentId: string;
+  funderAddress: string;
+  contractId: string;
+  tokenContractId: string;
+  destinationAddress: string;
+  amountXlm: string;
+  amountStroops: string;
+  deadlineLedger: number;
+  status: StellarEscrowStatus;
+  depositTransactionHash: string;
+  depositExplorerUrl: string;
+  fundedAt: string;
+  releaseTransactionHash?: string;
+  releaseExplorerUrl?: string;
+  releasedAt?: string;
+};

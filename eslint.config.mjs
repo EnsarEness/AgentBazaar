@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "src/lib/stellar/agentbazaar-escrow-bindings/**",
     "next-env.d.ts",
   ]),
 ]);
