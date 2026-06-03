@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Gavel, RefreshCw } from "lucide-react";
+import { CheckCircle2, Gavel, RefreshCw, Scale } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,6 +15,7 @@ export default function AuctionPage() {
     agents,
     tasks,
     bids,
+    auctionHistories,
     awarded,
     isGeneratingBids,
     bidError,
@@ -28,13 +30,15 @@ export default function AuctionPage() {
   const taskBids = bids
     .filter((bid) => bid.taskId === selectedTaskId)
     .sort((a, b) => a.amount - b.amount);
+  const auctionHistory = auctionHistories[selectedTaskId];
+  const judgeReport = auctionHistory?.judgeReport;
 
   return (
     <>
       <PageHeading
         eyebrow="Auction"
-        title="Run autonomous worker bidding"
-        description="Each worker agent analyzes the task, estimates effort, generates a bid, and returns a structured completion forecast."
+        title="Run a 5-round reverse auction"
+        description="The task is published to every worker agent, the lowest bid is visible each round, and competitors may lower bids without crossing their profitability threshold."
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
@@ -81,7 +85,7 @@ export default function AuctionPage() {
               onClick={() => generateBids(selectedTaskId)}
             >
               <RefreshCw className={isGeneratingBids ? "animate-spin" : ""} />
-              {isGeneratingBids ? "Agents Thinking" : "Generate AI Bids"}
+              {isGeneratingBids ? "Auction Running" : "Run Reverse Auction"}
             </Button>
             {bidError ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -95,13 +99,13 @@ export default function AuctionPage() {
           <CardHeader>
             <CardTitle>Bid board</CardTitle>
             <CardDescription>
-              Lowest bid appears first; confidence and reasoning explain agent fit.
+              Final round bids appear lowest first; confidence and reasoning explain agent behavior.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {taskBids.length === 0 ? (
               <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-center text-sm text-zinc-500">
-                Generate bids to open the market for this task.
+                Run the reverse auction to open the market for this task.
               </div>
             ) : (
               <Table>
@@ -119,10 +123,21 @@ export default function AuctionPage() {
                   {taskBids.map((bid) => {
                     const agent = agents.find((item) => item.id === bid.agentId);
                     const isAwarded = awarded[bid.taskId] === bid.agentId;
+                    const isJudgePick = judgeReport?.selectedAgentId === bid.agentId;
                     return (
-                      <TableRow key={`${bid.taskId}-${bid.agentId}`}>
+                      <TableRow
+                        key={`${bid.taskId}-${bid.agentId}`}
+                        className={isJudgePick ? "bg-teal-50/60" : undefined}
+                      >
                         <TableCell className="min-w-40 font-medium">
-                          <div>{agent?.name}</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {agent?.name}
+                            {isJudgePick ? (
+                              <Badge className="bg-teal-100 text-teal-800 ring-teal-200">
+                                Judge Pick
+                              </Badge>
+                            ) : null}
+                          </div>
                           <p className="mt-1 text-xs font-normal leading-5 text-zinc-500">
                             {bid.reasoning}
                           </p>
@@ -152,6 +167,139 @@ export default function AuctionPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Judge Agent evaluation</CardTitle>
+              <CardDescription>
+                Weighted decision using 0.4 quality, 0.3 reputation, 0.2 price, and 0.1 completion time.
+              </CardDescription>
+            </div>
+            <div className="flex size-11 items-center justify-center rounded-md bg-teal-100 text-teal-800">
+              <Scale className="size-5" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!judgeReport ? (
+            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-center text-sm text-zinc-500">
+              Run the reverse auction to generate a full evaluation report.
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
+                <p className="text-sm font-semibold text-teal-900">
+                  {judgeReport.selectedAgentName}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-teal-900">
+                  {judgeReport.explanation}
+                </p>
+                <p className="mt-2 text-xs text-teal-800">
+                  Cheapest bid: {judgeReport.cheapestAgentName} at{" "}
+                  {formatCurrency(judgeReport.cheapestBid)}
+                </p>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Agent</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Quality</TableHead>
+                    <TableHead>Reputation</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Report</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {judgeReport.evaluations.map((evaluation) => (
+                    <TableRow key={evaluation.agentId}>
+                      <TableCell className="font-medium">
+                        {evaluation.agentName}
+                      </TableCell>
+                      <TableCell>{evaluation.totalScore}</TableCell>
+                      <TableCell>{evaluation.scores.quality}</TableCell>
+                      <TableCell>{evaluation.scores.reputation}</TableCell>
+                      <TableCell>{evaluation.scores.price}</TableCell>
+                      <TableCell>{evaluation.scores.completionTime}</TableCell>
+                      <TableCell className="min-w-72 text-xs leading-5 text-zinc-600">
+                        {evaluation.explanation}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Auction history</CardTitle>
+          <CardDescription>
+            All five rounds are stored in memory for the selected task.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!auctionHistory ? (
+            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-center text-sm text-zinc-500">
+              No auction rounds recorded yet.
+            </div>
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-5">
+              {auctionHistory.rounds.map((round) => {
+                const leader = agents.find((agent) => agent.id === round.leaderAgentId);
+                return (
+                  <div
+                    key={`${round.taskId}-${round.round}`}
+                    className="rounded-lg border border-zinc-200 bg-white p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="font-semibold">Round {round.round}</h2>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          Leader: {leader?.name ?? round.leaderAgentId}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-teal-700">
+                        {formatCurrency(round.lowestBid)}
+                      </p>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {[...round.bids]
+                        .sort((a, b) => a.amount - b.amount)
+                        .map((bid) => (
+                          <div
+                            key={`${round.round}-${bid.agentId}`}
+                            className="border-t border-zinc-100 pt-3"
+                          >
+                            <div className="flex items-center justify-between gap-2 text-sm">
+                              <span className="font-medium text-zinc-800">
+                                {bid.agentName}
+                              </span>
+                              <span className="font-semibold">
+                                {formatCurrency(bid.amount)}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs text-zinc-500">
+                              <span>Min {formatCurrency(bid.minimumThreshold)}</span>
+                              <span>{Math.round(bid.confidence * 100)}% conf</span>
+                              <span>{bid.lowered ? "Lowered" : "Held"}</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
